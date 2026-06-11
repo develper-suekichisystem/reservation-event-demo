@@ -1,0 +1,535 @@
+/* ============================================================
+   大会予約デモ — ブルーテーマ（白・グレー・青）
+   ============================================================ */
+:root {
+  --primary:       #2563eb;
+  --primary-light: #93c5fd;
+  --primary-dark:  #1d4ed8;
+  --warning:       #d97706;
+  --warning-bg:    #fffbeb;
+  --warning-border:#fcd34d;
+  --white:         #ffffff;
+  --gray-50:       #f9fafb;
+  --gray-100:      #f3f4f6;
+  --gray-200:      #e5e7eb;
+  --gray-400:      #9ca3af;
+  --gray-500:      #6b7280;
+  --gray-600:      #4b5563;
+  --gray-700:      #374151;
+  --gray-800:      #1f2937;
+  --error:         #ef4444;
+  font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'ヒラギノ角ゴ ProN W3', Meiryo, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--gray-50);
+  color: var(--gray-800);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100svh;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root { min-height: 100svh; }
+
+/* ============================================================
+   レイアウト
+   ============================================================ */
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100svh;
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   ヘッダー
+   ============================================================ */
+.app-header {
+  background: var(--primary);
+  color: var(--white);
+  padding: 20px 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.app-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+.app-subtitle {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-top: 4px;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================================
+   ステップインジケーター
+   ============================================================ */
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 8px;
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-200);
+  gap: 8px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 56px;
+}
+.step-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-400);
+  background: var(--white);
+  transition: all 0.2s;
+}
+.step-item.active .step-circle  { border-color: var(--primary); background: var(--primary); color: var(--white); }
+.step-item.completed .step-circle { border-color: var(--primary); background: var(--primary-light); color: var(--white); }
+.step-label { font-size: 10px; color: var(--gray-400); }
+.step-item.active .step-label,
+.step-item.completed .step-label { color: var(--primary-dark); }
+
+/* ============================================================
+   メイン
+   ============================================================ */
+.app-main {
+  flex: 1;
+  padding: 20px 16px 40px;
+  overflow-y: auto;
+}
+.section-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--primary-light);
+}
+
+/* ============================================================
+   ローディング / エラー
+   ============================================================ */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--gray-400);
+}
+.error-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100svh;
+  color: var(--error);
+  font-size: 15px;
+  padding: 20px;
+  text-align: center;
+  background: var(--white);
+}
+
+/* ============================================================
+   スピナー
+   ============================================================ */
+.spinner-overlay {
+  position: fixed; inset: 0;
+  background: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999;
+}
+.spinner-overlay-api {
+  position: fixed; inset: 0;
+  background: rgba(255,255,255,0.6);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9998;
+  pointer-events: none;
+}
+.spinner-content {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.spinner-ring {
+  width: 44px; height: 44px;
+  border: 4px solid var(--gray-200);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner-text {
+  font-size: 13px; color: var(--gray-500);
+  letter-spacing: 0.15em; margin: 0;
+}
+
+/* ============================================================
+   大会選択
+   ============================================================ */
+.tournament-list { display: flex; flex-direction: column; gap: 12px; }
+.tournament-card {
+  width: 100%;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  font-family: inherit;
+}
+.tournament-card:hover, .tournament-card:active {
+  border-color: var(--primary);
+  box-shadow: 0 3px 10px rgba(37,99,235,0.18);
+  transform: translateY(-1px);
+}
+.tournament-card.full:hover, .tournament-card.full:active {
+  border-color: var(--warning);
+  box-shadow: 0 3px 10px rgba(217,119,6,0.18);
+}
+.tournament-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 8px; margin-bottom: 8px;
+}
+.tournament-name { font-size: 15px; font-weight: 600; color: var(--gray-800); }
+.tournament-meta {
+  display: flex; flex-direction: column; gap: 2px;
+  font-size: 12px; color: var(--gray-600); margin-bottom: 8px;
+}
+.tournament-desc { font-size: 12px; color: var(--gray-400); line-height: 1.5; }
+.tournament-full-note {
+  margin-top: 10px;
+  font-size: 12px; color: var(--warning);
+  background: var(--warning-bg); padding: 8px 12px;
+  border-radius: 6px; border-left: 3px solid var(--warning);
+}
+
+/* バッジ */
+.badge {
+  flex-shrink: 0;
+  font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px;
+  white-space: nowrap;
+}
+.badge-open { background: #eff6ff; color: var(--primary); }
+.badge-few  { background: var(--warning-bg); color: var(--warning); }
+.badge-full { background: #fef2f2; color: var(--error); }
+
+/* ============================================================
+   キャンセル待ち警告バナー
+   ============================================================ */
+.waitlist-banner {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+.waitlist-banner-icon { font-size: 18px; line-height: 1.3; }
+.waitlist-banner-title {
+  font-size: 13px; font-weight: 700; color: var(--warning);
+  margin-bottom: 2px;
+}
+.waitlist-banner-text { font-size: 12px; color: var(--gray-700); line-height: 1.6; }
+
+/* ============================================================
+   入力フォーム
+   ============================================================ */
+.entry-form { display: flex; flex-direction: column; gap: 16px; }
+.selected-tournament {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.selected-tournament-name { font-size: 14px; font-weight: 700; color: var(--gray-800); }
+.selected-tournament-meta { font-size: 12px; color: var(--gray-600); margin-top: 2px; }
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 13px; font-weight: 600; color: var(--gray-700); }
+.required { color: var(--error); margin-left: 2px; }
+.form-input {
+  border: 1px solid var(--gray-200); border-radius: 8px;
+  padding: 12px 14px; font-size: 15px; color: var(--gray-800);
+  width: 100%; outline: none; transition: border-color 0.15s;
+  font-family: inherit;
+}
+.form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.form-input.error  { border-color: var(--error); }
+.error-msg { font-size: 12px; color: var(--error); }
+.form-hint { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ============================================================
+   確認画面
+   ============================================================ */
+.confirm-card { border: 1px solid var(--gray-200); border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+.confirm-row { display: flex; padding: 12px 16px; border-bottom: 1px solid var(--gray-100); }
+.confirm-row:last-child { border-bottom: none; }
+.confirm-label { width: 88px; font-size: 13px; font-weight: 600; color: var(--gray-400); flex-shrink: 0; }
+.confirm-value { font-size: 14px; color: var(--gray-800); font-weight: 500; word-break: break-all; }
+.confirm-value-waitlist { color: var(--warning); font-weight: 700; }
+.confirm-note  { font-size: 13px; color: var(--gray-600); text-align: center; margin-bottom: 20px; }
+.confirm-value-profile { display: flex; align-items: center; gap: 8px; }
+.confirm-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  object-fit: cover; border: 1px solid var(--primary-light);
+}
+
+/* ============================================================
+   完了画面
+   ============================================================ */
+.complete {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; padding: 40px 16px; gap: 16px;
+}
+.complete-icon {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: var(--primary); color: var(--white);
+  font-size: 36px; display: flex; align-items: center; justify-content: center;
+}
+.complete-icon.waitlist { background: var(--warning); }
+.complete-title   { font-size: 20px; font-weight: 700; color: var(--gray-800); }
+.complete-message { font-size: 14px; color: var(--gray-600); line-height: 1.8; }
+.complete-message strong { color: var(--warning); }
+.complete-id {
+  font-size: 13px; color: var(--primary-dark);
+  background: rgba(37,99,235,0.08); padding: 8px 20px;
+  border-radius: 20px; font-weight: 600;
+}
+.complete-note { font-size: 13px; color: var(--gray-400); line-height: 1.7; }
+.demo-note {
+  font-size: 12px; color: var(--gray-400);
+  background: var(--gray-100); padding: 8px 16px; border-radius: 8px;
+}
+
+/* ============================================================
+   ボタン
+   ============================================================ */
+.btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.btn-next {
+  width: 100%; background: var(--primary); color: var(--white);
+  border: none; border-radius: 10px; padding: 15px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  letter-spacing: 0.05em; transition: background 0.15s; font-family: inherit;
+}
+.btn-next:hover:not(:disabled) { background: var(--primary-dark); }
+.btn-next:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-back {
+  width: 100%; background: none; color: var(--gray-400);
+  border: 1px solid var(--gray-200); border-radius: 10px;
+  padding: 12px; font-size: 14px; cursor: pointer;
+  transition: all 0.15s; font-family: inherit;
+}
+.btn-back:hover:not(:disabled) { border-color: var(--gray-400); color: var(--gray-600); }
+
+/* ============================================================
+   LINEプロフィール表示
+   ============================================================ */
+.line-profile-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px; background: rgba(37,99,235,0.06);
+  border: 1px solid var(--primary-light); border-radius: 12px;
+}
+.line-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  object-fit: cover; flex-shrink: 0;
+  border: 2px solid var(--primary-light);
+}
+.line-avatar-placeholder {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--primary); color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 700; flex-shrink: 0;
+}
+.line-profile-info { display: flex; flex-direction: column; gap: 2px; }
+.line-profile-label { font-size: 11px; color: var(--gray-400); }
+.line-profile-name  { font-size: 16px; font-weight: 700; color: var(--gray-800); }
+
+/* ============================================================
+   ログイン画面
+   ============================================================ */
+.login-screen {
+  min-height: 100svh; display: flex; align-items: center; justify-content: center;
+  background: var(--gray-50); padding: 20px;
+}
+.login-card {
+  background: var(--white); border-radius: 16px;
+  padding: 32px 24px; width: 100%; max-width: 360px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+.login-logo { text-align: center; margin-bottom: 28px; }
+.login-form { display: flex; flex-direction: column; gap: 16px; }
+
+/* ============================================================
+   管理画面
+   ============================================================ */
+.admin-page {
+  max-width: 480px; margin: 0 auto;
+  min-height: 100svh; background: var(--white);
+}
+.admin-tabs {
+  display: flex; border-bottom: 2px solid var(--gray-100);
+}
+.admin-tab {
+  flex: 1; padding: 14px; background: none; border: none;
+  font-size: 14px; font-weight: 600; color: var(--gray-400);
+  cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -2px; transition: all 0.15s; font-family: inherit;
+}
+.admin-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.admin-content { padding: 0; }
+
+.admin-date-picker {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px; font-size: 14px; color: var(--gray-600);
+  border-bottom: 1px solid var(--gray-100);
+}
+.admin-select {
+  flex: 1;
+  border: 1px solid var(--gray-200); border-radius: 8px;
+  padding: 8px 12px; font-size: 14px; color: var(--gray-800);
+  outline: none; font-family: inherit; background: var(--white);
+}
+
+.entry-summary {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 12px 16px; font-size: 12px; color: var(--gray-600);
+  background: var(--gray-50); border-bottom: 1px solid var(--gray-100);
+}
+.entry-summary-count { font-weight: 700; color: var(--gray-800); }
+
+.no-data { text-align: center; color: var(--gray-400); padding: 40px; }
+.admin-list { display: flex; flex-direction: column; gap: 10px; padding: 12px 16px; }
+.entry-group-heading {
+  font-size: 13px; font-weight: 700; color: var(--primary);
+  margin-top: 8px;
+  border-bottom: 1px solid var(--gray-100); padding-bottom: 4px;
+}
+.entry-group-heading.waitlist { color: var(--warning); }
+.admin-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px; border: 1px solid var(--gray-200);
+  border-radius: 10px; background: var(--white);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.admin-card.waitlist { background: var(--warning-bg); border-color: var(--warning-border); }
+.admin-time {
+  font-size: 18px; font-weight: 700; color: var(--primary);
+  min-width: 36px; padding-top: 2px; text-align: center;
+}
+.admin-time.waitlist { color: var(--warning); font-size: 14px; padding-top: 5px; }
+.admin-info { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.admin-name { font-size: 15px; font-weight: 600; color: var(--gray-800); }
+.admin-menu { font-size: 13px; color: var(--primary-dark); }
+.admin-card.waitlist .admin-menu { color: var(--gray-600); }
+.admin-contact { font-size: 12px; color: var(--gray-600); }
+.btn-cancel {
+  background: none; border: 1px solid var(--error); color: var(--error);
+  border-radius: 6px; padding: 4px 10px; font-size: 12px;
+  cursor: pointer; white-space: nowrap; align-self: center; font-family: inherit;
+}
+.btn-cancel:hover { background: #fef2f2; }
+
+.admin-footer {
+  padding: 24px 16px 40px; display: flex; justify-content: center;
+}
+.btn-reset {
+  background: none; border: 1px solid var(--gray-200); color: var(--gray-400);
+  border-radius: 8px; padding: 8px 20px; font-size: 12px;
+  cursor: pointer; font-family: inherit; transition: all 0.15s;
+}
+.btn-reset:hover:not(:disabled) { border-color: var(--error); color: var(--error); }
+.btn-reset:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ============================================================
+   大会管理（メニュー管理スタイルを流用）
+   ============================================================ */
+.menu-admin { padding: 16px; }
+.menu-admin-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+}
+.admin-section-title { font-size: 16px; font-weight: 700; color: var(--gray-800); }
+.btn-add {
+  background: var(--primary); color: var(--white); border: none;
+  border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+}
+.btn-add:hover { background: var(--primary-dark); }
+.menu-admin-list { display: flex; flex-direction: column; gap: 10px; }
+.menu-admin-card {
+  display: flex; gap: 6px;
+  border: 1px solid var(--gray-200); border-radius: 10px;
+  padding: 14px; background: var(--white);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.menu-admin-card.inactive { opacity: 0.5; }
+.menu-admin-info { flex: 1; }
+.menu-admin-name  { font-size: 15px; font-weight: 600; color: var(--gray-800); margin-bottom: 2px; }
+.menu-admin-price { font-size: 13px; font-weight: 700; color: var(--primary-dark); margin: 2px 0; }
+.menu-admin-price.full { color: var(--error); }
+.menu-admin-desc  { font-size: 12px; color: var(--gray-600); line-height: 1.5; }
+.menu-admin-duration { font-size: 12px; color: var(--gray-400); }
+.menu-admin-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.btn-toggle {
+  font-size: 12px; border-radius: 20px; padding: 4px 10px;
+  border: 1px solid var(--gray-200); background: var(--gray-100);
+  color: var(--gray-400); cursor: pointer; font-family: inherit;
+}
+.btn-toggle.active { border-color: var(--primary); background: rgba(37,99,235,0.1); color: var(--primary-dark); }
+.btn-edit {
+  font-size: 12px; border-radius: 6px; padding: 4px 10px;
+  border: 1px solid var(--gray-200); background: none;
+  color: var(--gray-600); cursor: pointer; font-family: inherit;
+}
+.btn-edit:hover { border-color: var(--gray-400); }
+.btn-delete {
+  font-size: 12px; border-radius: 6px; padding: 4px 10px;
+  border: 1px solid var(--error); background: none;
+  color: var(--error); cursor: pointer; font-family: inherit;
+}
+.btn-delete:hover { background: #fef2f2; }
+
+/* ============================================================
+   モーダル
+   ============================================================ */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 100;
+}
+.modal {
+  background: var(--white); border-radius: 16px 16px 0 0;
+  padding: 24px 20px 40px; width: 100%; max-width: 480px;
+  display: flex; flex-direction: column; gap: 14px;
+  max-height: 90svh; overflow-y: auto;
+}
+.modal-title { font-size: 17px; font-weight: 700; color: var(--gray-800); }
+.modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.form-label-check {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 600; color: var(--gray-700); cursor: pointer;
+}
+textarea.form-input { resize: vertical; font-family: inherit; }
